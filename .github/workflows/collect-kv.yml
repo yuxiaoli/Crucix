@@ -8,7 +8,7 @@ on:
         default: false
   # Hourly cadence approved; schedule stays inert until publication is configured.
   schedule:
-    - cron: '17 * * * *'
+    - cron: '47 * * * *'
 permissions:
   contents: read
 concurrency:
