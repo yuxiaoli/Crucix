@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "crucix-snapshot-api",
+  "main": "src/index.mjs",
+  "compatibility_date": "2026-10-06",
+  "workers_dev": true,
+  "preview_urls": false,
+  "kv_namespaces": [
+    {
+      "binding": "CRUCIX_SNAPSHOTS",
+      // Replace only after explicitly authorizing the namespace and deployment.
+      // This is intentionally invalid; it is not an account ID or secret.
+      "id": "REPLACE_WITH_AUTHORIZED_KV_NAMESPACE_ID"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Crucix KV snapshot v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "generatedAt",
+    "data"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "meta"
+      ],
+      "properties": {
+        "meta": {
+          "type": "object",
+          "required": [
+            "timestamp",
+            "quality"
+          ],
+          "properties": {
+            "timestamp": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Sweep collection time, not freshness of each underlying observation."
+            },
+            "quality": {
+              "type": "object",
+              "required": [
+                "counts",
+                "total",
+                "partial",
+                "sources",
+                "policy"
+              ],
+              "properties": {
+                "counts": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "no_data",
+                    "unavailable",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "no_data": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "unavailable": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "error": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "total": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "partial": {
+                  "type": "boolean"
+                },
+                "policy": {
+                  "const": "conservative-observations-v1"
+                },
+                "sources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "name",
+                      "state",
+                      "reason"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "state": {
+                        "enum": [
+                          "data",
+                          "no_data",
+                          "unavailable",
+                          "error"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string"
+                      },
+                      "warnings": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

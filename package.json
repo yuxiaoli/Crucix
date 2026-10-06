@@ -12,7 +12,11 @@
     "brief:save": "node apis/save-briefing.mjs",
     "diag": "node diag.mjs",
     "clean": "node scripts/clean.mjs",
-    "fresh-start": "npm run clean && npm start"
+    "fresh-start": "npm run clean && npm start",
+    "test": "node --test tests/*.test.mjs",
+    "snapshot:collect": "node scripts/collect-snapshot.mjs",
+    "snapshot:check": "node scripts/publish-snapshot.mjs",
+    "pages:build": "node scripts/build-pages.mjs"
   },
   "keywords": [
     "osint",
@@ -30,7 +34,9 @@
     "express": "^5.1.0"
   },
   "optionalDependencies": {
-    "discord.js": "^14.25.1"  },
+    "discord.js": "^14.25.1"
+  },
   "overrides": {
-    "undici": "^7.24.4"  }
+    "undici": "^7.24.4"
+  }
 }

@@ -398,9 +398,9 @@ export function generateIdeas(V2) {
 }
 
 // === Synthesize raw sweep data into dashboard format ===
-export async function synthesize(data) {
+export async function synthesize(data, options = {}) {
   const liveAirHotspots = data.sources.OpenSky?.hotspots || [];
-  const airFallback = sumAirHotspots(liveAirHotspots) > 0
+  const airFallback = options.disableFallback || sumAirHotspots(liveAirHotspots) > 0
     ? null
     : loadOpenSkyFallback(data.sources.OpenSky?.timestamp || data.crucix?.timestamp);
   const effectiveAirHotspots = airFallback?.hotspots || liveAirHotspots;
@@ -594,7 +594,7 @@ export async function synthesize(data) {
   if (yfWti?.history?.length) energy.wtiRecent = yfWti.history.map(h => h.close);
 
   // Fetch RSS
-  const news = await fetchAllNews();
+  const news = options.offline ? [] : await fetchAllNews();
 
   const V2 = {
     meta: data.crucix, air, thermal, tSignals, chokepoints, nuke, nukeSignals,

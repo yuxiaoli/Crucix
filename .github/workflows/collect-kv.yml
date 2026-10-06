@@ -1,0 +1,42 @@
+name: Collect public snapshot to KV
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish one validated snapshot to the dedicated Crucix KV namespace
+        type: boolean
+        default: false
+  # Hourly cadence approved; schedule stays inert until publication is configured.
+  schedule:
+    - cron: '17 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: crucix-kv-publisher
+  cancel-in-progress: false
+jobs:
+  collect:
+    if: github.repository == 'yuxiaoli/Crucix' && (github.event_name != 'schedule' || vars.CRUCIX_PUBLISH_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --omit=optional --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - name: Collect without credentials (one shot, 120 second bound)
+        run: npm run snapshot:collect
+      - name: Validate publication without network writes
+        run: npm run snapshot:check
+      - name: Publish one snapshot
+        if: vars.CRUCIX_PUBLISH_ENABLED == 'true' && (inputs.publish == true || github.event_name == 'schedule')
+        env:
+          CF_ACCOUNT_ID: ${{ vars.CF_ACCOUNT_ID }}
+          CF_KV_NAMESPACE_ID: ${{ vars.CF_KV_NAMESPACE_ID }}
+          CF_KV_API_TOKEN: ${{ secrets.CF_KV_API_TOKEN }}
+        run: node scripts/publish-snapshot.mjs --publish

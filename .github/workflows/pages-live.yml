@@ -1,0 +1,45 @@
+name: Deploy live Pages frontend
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.repository == 'yuxiaoli/Crucix'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --omit=optional --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - name: Build public HTML with only a public read-only API URL
+        env:
+          CRUCIX_API_BASE: ${{ vars.CRUCIX_API_BASE }}
+          CRUCIX_SOURCE_URL: https://github.com/yuxiaoli/Crucix
+        run: npm run pages:build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: output/pages
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

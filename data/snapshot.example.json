@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-06T08:00:40Z",
+  "data": {
+    "meta": {
+      "timestamp": "2026-10-06T08:00:30Z",
+      "quality": {
+        "counts": {
+          "data": 1,
+          "no_data": 0,
+          "unavailable": 1,
+          "error": 0
+        },
+        "total": 2,
+        "partial": true,
+        "sources": [
+          {
+            "name": "Example public source",
+            "state": "data",
+            "reason": "Fictional demonstration observation."
+          },
+          {
+            "name": "Example optional source",
+            "state": "unavailable",
+            "reason": "No credentials."
+          }
+        ],
+        "policy": "conservative-observations-v1"
+      }
+    },
+    "news": []
+  }
+}

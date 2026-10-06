@@ -445,7 +445,7 @@ async function start() {
     // We must use `cmd /c start ""` to ensure it works in both cmd.exe and PowerShell.
     const openCmd = process.platform === 'win32' ? 'cmd /c start ""' :
                     process.platform === 'darwin' ? 'open' : 'xdg-open';
-    exec(`${openCmd} "http://localhost:${port}"`, (err) => {
+    if (process.env.OPEN_BROWSER !== 'false') exec(`${openCmd} "http://localhost:${port}"`, (err) => {
       if (err) console.log('[Crucix] Could not auto-open browser:', err.message);
     });
 
@@ -461,13 +461,15 @@ async function start() {
     }
 
     // Run first sweep (refreshes data in background)
-    console.log('[Crucix] Running initial sweep...');
-    runSweepCycle().catch(err => {
-      console.error('[Crucix] Initial sweep failed:', err.message || err);
-    });
+    if (process.env.INITIAL_SWEEP !== 'false') {
+      console.log('[Crucix] Running initial sweep...');
+      runSweepCycle().catch(err => {
+        console.error('[Crucix] Initial sweep failed:', err.message || err);
+      });
+    }
 
     // Schedule recurring sweeps
-    setInterval(runSweepCycle, config.refreshIntervalMinutes * 60 * 1000);
+    if (process.env.AUTO_SWEEP !== 'false') setInterval(runSweepCycle, config.refreshIntervalMinutes * 60 * 1000);
   });
 }
 
