@@ -11,7 +11,7 @@ const spaceLabels = ['New Objects (30d)', 'Military Sats', 'Starlink', 'OneWeb',
 
 function fixture() {
   return {
-    meta: { quality: { sources: [] } }, air: [], thermal: [], chokepoints: [], nuke: [], who: [], fred: [],
+    meta: { quality: { sources: [] } }, air: [], thermal: [], tSignals: [], chokepoints: [], nuke: [], who: [], fred: [],
     tg: { posts: 0, urgent: [], topPosts: [] }, sdr: { total: 0, directoryOnly: true },
     acled: { totalEvents: 0, totalFatalities: 0 }, treasury: {},
     space: { iss: {}, constellations: {}, militaryByCountry: { TEST: null }, signals: [] },
@@ -20,16 +20,18 @@ function fixture() {
 
 function render(data) {
   const rail = { innerHTML: '' };
+  const rightRail = { innerHTML: '' };
   const context = vm.createContext({
     fixtureData: data, location: { protocol: 'https:' }, window: { innerWidth: 1440 },
     localStorage: { getItem: () => null },
-    document: { addEventListener() {}, getElementById(id) { assert.equal(id, 'leftRail'); return rail; } },
+    document: { addEventListener() {}, getElementById(id) { assert.ok(['leftRail', 'rightRail'].includes(id)); return id === 'leftRail' ? rail : rightRail; } },
   });
   new vm.Script(script).runInContext(context);
-  vm.runInContext('D = fixtureData; renderLeftRail();', context);
+  vm.runInContext('D = fixtureData; renderLeftRail(); renderRight();', context);
   const rows = new Map([...rail.innerHTML.matchAll(/<div class="econ-row"><span class="elabel"[^>]*>(.*?)<\/span><span class="eval"[^>]*>(.*?)<\/span><\/div>/gs)].map(match => [match[1], match[2]]));
   const layers = new Map([...rail.innerHTML.matchAll(/<div class="layer-item">[\s\S]*?<div class="layer-name">([^<]*)<\/div><div class="layer-sub">([^<]*)<\/div>[\s\S]*?<div class="layer-count">([^<]*)<\/div><\/div>/g)].map(match => [match[1], { sub: match[2], count: match[3] }]));
-  return { rows, layers, html: rail.innerHTML };
+  const signalCore = new Map([...rightRail.innerHTML.matchAll(/<div class="sm"><span class="sml">([^<]*)([\s\S]*?)<\/span><div class="smb">([\s\S]*?)<\/div><span class="smv"[^>]*>([^<]*)<\/span><\/div>/g)].map(match => [match[1], { value: match[4], sub: match[2].replace(/<[^>]*>/g, ''), bar: match[3] }]));
+  return { rows, layers, signalCore, html: rail.innerHTML };
 }
 
 function setNumbers(data, value) {
@@ -91,14 +93,29 @@ test('finite observations and numeric source strings preserve their values', () 
   assert.equal(rows.get('TEST'), '24 mil sats');
 });
 
-test('unavailable FIRMS and ACLED sources are explicit while measured zero counts remain zero', () => {
+test('both rails consistently mark unavailable FIRMS and ACLED while preserving measured zeroes', () => {
   for (const state of ['unavailable', 'data']) {
     const data = fixture();
     data.meta.quality.sources = ['FIRMS', 'ACLED'].map(name => ({ name, state }));
-    data.thermal = [{ det: 0, night: 0 }];
-    const { layers } = render(data);
+    data.thermal = [{ det: 0, night: 0, hc: 0 }];
+    const { layers, signalCore } = render(data);
     const unavailable = state === 'unavailable';
     assert.deepEqual(layers.get('Thermal Spikes'), { count: unavailable ? 'Unavailable' : '0', sub: unavailable ? 'Source unavailable' : '0 night det.' });
     assert.deepEqual(layers.get('Conflict Events'), { count: unavailable ? 'Unavailable' : '0', sub: unavailable ? 'Source unavailable' : '0 fatalities' });
+    const thermal = signalCore.get('Thermal Spikes');
+    assert.equal(thermal.value, unavailable ? 'N/A' : '0');
+    assert.equal(thermal.sub, unavailable ? 'FIRMS source unavailable' : '');
+    if (unavailable) assert.equal(thermal.bar, '', 'Unavailable source must have no active signal bar');
+    else assert.match(thermal.bar, /width:80%/, 'Existing measured-data bar remains unchanged');
   }
+});
+
+test('available FIRMS observations keep distinct detection and high-confidence counts on both rails', () => {
+  const data = fixture();
+  data.meta.quality.sources = [{ name: 'FIRMS', state: 'data' }];
+  data.thermal = [{ det: 5, night: 1, hc: 2 }];
+  const { layers, signalCore } = render(data);
+  assert.deepEqual(layers.get('Thermal Spikes'), { count: '5', sub: '1 night det.' });
+  assert.equal(signalCore.get('Thermal Spikes').value, '2');
+  assert.equal(signalCore.get('Thermal Spikes').sub, '');
 });

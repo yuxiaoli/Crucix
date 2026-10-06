@@ -637,6 +637,9 @@ function formatObservationNumber(value, format = String){
   const number = finiteObservationNumber(value);
   return number === null ? 'N/A' : format(number);
 }
+function sourceUnavailable(name){
+  return D.meta?.quality?.sources?.some(source => source.name === name && source.state === 'unavailable') === true;
+}
 function renderLeftRail(){
   const totalAir=D.air.reduce((s,a)=>s+a.total,0);
   const totalThermal=D.thermal.reduce((s,t)=>s+t.det,0);
@@ -644,7 +647,6 @@ function renderLeftRail(){
   const newsCount=(D.news||[]).length;
   const conflictEvents = D.acled?.totalEvents || 0;
   const conflictFatal = D.acled?.totalFatalities || 0;
-  const sourceUnavailable = name => D.meta?.quality?.sources?.some(source => source.name === name && source.state === 'unavailable');
   const thermalUnavailable = sourceUnavailable('FIRMS');
   const conflictUnavailable = sourceUnavailable('ACLED');
   const layers=[
@@ -1539,6 +1541,7 @@ function renderLower(){
 // === RIGHT RAIL ===
 function renderRight(){
   const mobile = isMobileLayout();
+  const thermalUnavailable = sourceUnavailable('FIRMS');
   // CROSS-SOURCE SIGNALS — moved from lower grid to right rail
   const signals=D.tSignals.slice(0,6).map((s,i)=>`<div class="signal-row"><strong>Signal ${i+1}</strong><p>${s}</p></div>`).join('');
 
@@ -1546,7 +1549,7 @@ function renderRight(){
   const signalMetrics=[
     {l:'Incident Tempo',v:D.tg.urgent.length,p:70},
     {l:'Air Theaters',v:D.air.length,p:60},
-    {l:'Thermal Spikes',v:D.thermal.reduce((s,t)=>s+t.hc,0),p:80},
+    {l:'Thermal Spikes',v:thermalUnavailable?'N/A':D.thermal.reduce((s,t)=>s+t.hc,0),p:80,unavailable:thermalUnavailable,sub:thermalUnavailable?'FIRMS source unavailable':''},
     {l:'SDR Nodes',v:D.sdr.total,p:92},
     {l:'Chokepoints',v:D.chokepoints.length,p:50},
     {l:'WHO Alerts',v:D.who.length,p:40}
@@ -1584,7 +1587,7 @@ function renderRight(){
     ${mobile ? '' : buildOsintPanel('right-osint', 260)}
     <div class="g-panel right-core">
       <div class="sec-head"><h3>${t('panels.signalCore','Signal Core')}</h3><span class="badge">${t('badges.hotMetrics','HOT METRICS')}</span></div>
-      ${signalMetrics.map(s=>`<div class="sm"><span class="sml">${s.l}</span><div class="smb"><span style="width:${s.p}%"></span></div><span class="smv">${s.v}</span></div>`).join('')}
+      ${signalMetrics.map(s=>`<div class="sm"><span class="sml">${s.l}${s.sub?`<small style="display:block;font-size:8px;color:var(--dim);text-transform:none;letter-spacing:0">${s.sub}</small>`:''}</span><div class="smb">${s.unavailable?'':`<span style="width:${s.p}%"></span>`}</div><span class="smv"${s.unavailable?' style="color:var(--dim);background:none;border-color:var(--border)"':''}>${s.v}</span></div>`).join('')}
     </div>
     <div class="g-panel right-delta">
       <div class="sec-head"><h3>${t('panels.sweepDelta','Sweep Delta')}</h3><span class="badge ${dirClass}">${dirEmoji} ${ds.direction?t('delta.'+ds.direction,ds.direction.toUpperCase()):t('delta.baseline','BASELINE')}</span></div>
