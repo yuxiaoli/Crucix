@@ -56,4 +56,5 @@ test('actual dashboard builds without the checked-in snapshot', async () => {
   assert.doesNotMatch(html, /let D = \{/);
   assert.match(html, /mountLiveDashboard/);
   assert.equal((html.match(/data-source-link href="https:\/\/github.com\/example\/Crucix/g) || []).length, 2);
+  assert.match(html, /<a href="https:\/\/github.com\/calesthio\/Crucix"[^>]*>Upstream Crucix<\/a>/);
 });
